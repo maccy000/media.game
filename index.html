@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>バズ・アーキテクト - デモ版</title>
+    <style>
+        :root {
+            --bg-color: #050510;
+            --panel-bg: #0a0f1a;
+            --text-main: #66fcf1;
+            --text-muted: #45a29e;
+            --text-warn: #f2a900;
+            --text-danger: #ff003c;
+            --border-color: #1f2833;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #game-container {
+            width: 1000px;
+            display: grid;
+            grid-template-columns: 250px 1fr 250px;
+            grid-template-rows: auto 1fr;
+            gap: 15px;
+        }
+
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        h1, h2, h3 { margin: 0; padding: 0; text-transform: uppercase; }
+        h1 { color: var(--text-main); text-shadow: 0 0 10px var(--text-main); letter-spacing: 2px;}
+        h2 { font-size: 1.2em; color: var(--text-muted); margin-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.05);
+        }
+
+        /* Stats */
+        .stat-line { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .stat-value { font-weight: bold; }
+        .stat-value.good { color: var(--text-main); }
+        .stat-value.bad { color: var(--text-danger); }
+        
+        /* Bar Charts */
+        .bar-container { background: #111; border: 1px solid var(--border-color); height: 15px; margin-top: 5px; position: relative; }
+        .bar-fill { height: 100%; transition: width 0.3s; }
+        .bar-divide { background-color: var(--text-danger); }
+        .bar-mental { background-color: var(--text-main); }
+
+        /* Sliders */
+        .slider-group { margin-bottom: 20px; }
+        .slider-group label { display: block; margin-bottom: 5px; font-size: 0.9em; }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 15px;
+            background: var(--text-main);
+            cursor: pointer;
+            border-radius: 2px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            background: #111;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Inbox */
+        #inbox { height: 300px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; }
+        .message {
+            border: 1px solid var(--text-muted);
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            background: rgba(69, 162, 158, 0.1);
+        }
+        .message.boss { border-color: var(--text-warn); background: rgba(242, 169, 0, 0.1); }
+        .message.staff { border-color: var(--text-main); }
+        .message.user { border-color: #888; color: #ccc; }
+        .msg-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
+        
+        .actions { display: flex; gap: 10px; margin-top: 10px; }
+        button {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--text-main);
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: inherit;
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+        button:hover { background: var(--text-main); color: var(--bg-color); }
+        button:disabled { border-color: #555; color: #555; cursor: not-allowed; background: transparent; }
+        button.btn-trash { border-color: var(--text-danger); color: var(--text-danger); }
+        button.btn-trash:hover { background: var(--text-danger); color: white; }
+
+        /* Next Turn */
+        .turn-controls { text-align: center; margin-top: 20px; }
+        .btn-large { font-size: 1.2em; padding: 10px 30px; border-width: 2px; }
+
+        /* News Ticker */
+        #news-feed { height: 150px; overflow-y: hidden; font-size: 0.85em; color: var(--text-muted); border-top: 1px dotted var(--border-color); padding-top: 10px;}
+        .news-item { margin-bottom: 5px; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <header>
+        <h1>Synapse Social</h1>
+        <div style="color: var(--text-muted);">Algorithm Designer Terminal v1.0.4</div>
+    </header>
+
+    <aside class="panel left-panel">
+        <h2>Dashboard</h2>
+        <div class="stat-line"><span>Month:</span> <span id="val-month" class="stat-value">1</span></div>
+        <div class="stat-line"><span>Target Rev:</span> <span id="val-target" class="stat-value text-warn">$10.0M</span></div>
+        <div class="stat-line"><span>Revenue:</span> <span id="val-rev" class="stat-value">$10.0M</span></div>
+        <div class="stat-line"><span>Stock Price:</span> <span id="val-stock" class="stat-value">$100.0</span></div>
+        <hr style="border-color: var(--border-color); margin: 15px 0;">
+        
+        <h2>Algorithm Core</h2>
+        <div class="slider-group">
+            <label>Engagement (Profit / Outrage)</label>
+            <input type="range" id="slider-engage" min="0" max="100" value="30">
+        </div>
+        <div class="slider-group">
+            <label>Moderation (Safety / Cost)</label>
+            <input type="range" id="slider-mod" min="0" max="100" value="70">
+        </div>
+    </aside>
+
+    <section class="panel center-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); margin-bottom: 10px;">
+            <h2>Inbox (Triage)</h2>
+            <div style="font-size: 0.9em; color: var(--text-warn);">残りリソース(時間): <span id="val-time" style="font-weight: bold; font-size: 1.2em;">3</span></div>
+        </div>
+        
+        <div id="inbox">
+            </div>
+
+        <div class="turn-controls">
+            <button class="btn-large" id="btn-end-turn" onclick="endTurn()">ターンを終了 (アルゴリズム適用)</button>
+        </div>
+    </section>
+
+    <aside class="panel right-panel">
+        <h2>Society Health</h2>
+        
+        <div style="margin-bottom: 15px;">
+            <div class="stat-line"><span>Social Divide</span> <span id="val-divide">20%</span></div>
+            <div class="bar-container"><div id="bar-divide" class="bar-fill bar-divide" style="width: 20%;"></div></div>
+            <div style="font-size: 0.7em; color: gray;">100%で暴動・サービス停止</div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <div class="stat-line"><span>User Mental</span> <span id="val-mental">80%</span></div>
+            <div class="bar-container"><div id="bar-mental" class="bar-fill bar-mental" style="width: 80%;"></div></div>
+            <div style="font-size: 0.7em; color: gray;">0%で社会問題化</div>
+        </div>
+
+        <h2>News Feed</h2>
+        <div id="news-feed">
+            <div class="news-item">> 新しいアルゴリズム主任が就任しました。</div>
+        </div>
+    </aside>
+</div>
+
+<script>
+    // --- ゲームの状態（ステータス） ---
+    let state = {
+        month: 1,
+        maxMonth: 6, // デモ版は6ヶ月で終了
+        targetRev: 10.0,
+        rev: 10.0,
+        stock: 100.0,
+        divide: 20,
+        mental: 80,
+        time: 3, // 1ターンに使えるリソース
+        activeMessages: []
+    };
+
+    // --- シナリオデータ（光から闇へのグラデーション） ---
+    const scenarios = {
+        1: [
+            { id: 1, type: "staff", sender: "部下:アオイ", text: "先輩、新機能のスパムフィルター効果出てます！ユーザーから感謝の声が届いてますよ！", cost: 1, onResolve: { mental: 5, divide: -5 }, onTrash: { mental: -5 } },
+            { id: 2, type: "user", sender: "ユーザー", text: "迷子になっていた猫が、このアプリの拡散で見つかりました！本当にありがとう。", cost: 1, onResolve: { mental: 5 }, onTrash: { } },
+            { id: 3, type: "boss", sender: "CEO:リチャード", text: "就任おめでとう。今月は様子見だ。適当にやってくれ。目標収益は10Mだ。", cost: 0, onResolve: {}, onTrash: {} }
+        ],
+        2: [
+            { id: 4, type: "boss", sender: "CEO:リチャード", text: "株主が成長鈍化を気にしている。来月は目標収益を15Mにする。エンゲージメントを上げろ。", cost: 1, onResolve: { time: 1 }, onTrash: { stock: -10 } },
+            { id: 5, type: "user", sender: "ユーザー", text: "私のイラストが無断転載され、誹謗中傷されています。アカウントを凍結してください。", cost: 1, onResolve: { mental: 5 }, onTrash: { divide: 5, mental: -5 } },
+        ],
+        3: [
+            { id: 6, type: "staff", sender: "部下:アオイ", text: "最近、タイムラインの空気が攻撃的です…。ヘイトスピーチの検知AIを強化しませんか？リソースが必要です。", cost: 2, onResolve: { mental: 10, divide: -10, rev: -2.0 }, onTrash: { mental: -10 } },
+            { id: 7, type: "user", sender: "ユーザー", text: "特定の人種を攻撃するデマがバズっています。放置するんですか？", cost: 1, onResolve: { divide: -5 }, onTrash: { divide: 10, rev: 2.0 } },
+        ],
+        4: [
+            { id: 8, type: "boss", sender: "CEO:リチャード", text: "いいぞ！論争が起きれば起きるほど滞在時間が伸びる！目標を25Mに引き上げる。安全フィルターなんか外せ！", cost: 1, onResolve: { rev: 5.0, divide: 10 }, onTrash: { stock: -20 } },
+            { id: 9, type: "user", sender: "ユーザー", text: "デマのせいで私の経営する飲食店に嫌がらせの電話が殺到しています。助けて、もう生きていけません。", cost: 2, onResolve: { mental: 10 }, onTrash: { mental: -15, divide: 5 } },
+            { id: 10, type: "staff", sender: "部下:アオイ", text: "先輩、もう嫌です。私たちが作ってるのは、人を傷つける化け物じゃないですか？", cost: 2, onResolve: { mental: 5 }, onTrash: { mental: -10 } }
+        ],
+        5: [
+            { id: 11, type: "boss", sender: "CEO:リチャード", text: "暴動のニュースを見たか？連中、我々のアプリで連絡を取り合っている！トラフィックは歴史的最高値だ！ハハハ！", cost: 0, onResolve: {}, onTrash: {} },
+            { id: 12, type: "user", sender: "ユーザー", text: "ワクチンには毒が入っている！真実から目を覚ませ！！！（スパム報告：1500件）", cost: 3, onResolve: { divide: -15 }, onTrash: { divide: 20, rev: 5.0 } },
+            { id: 13, type: "user", sender: "ユーザー", text: "家の前に顔を隠した人たちが集まっています。だれかたすけ", cost: 2, onResolve: { mental: 5 }, onTrash: { mental: -20 } }
+        ]
+    };
+
+    // --- UIの更新 ---
+    function updateUI() {
+        document.getElementById('val-month').innerText = state.month;
+        document.getElementById('val-target').innerText = "$" + state.targetRev.toFixed(1) + "M";
+        document.getElementById('val-rev').innerText = "$" + state.rev.toFixed(1) + "M";
+        document.getElementById('val-stock').innerText = "$" + state.stock.toFixed(1);
+        
+        // 色の変更
+        document.getElementById('val-rev').className = "stat-value " + (state.rev >= state.targetRev ? "good" : "bad");
+        
+        document.getElementById('val-divide').innerText = Math.floor(state.divide) + "%";
+        document.getElementById('bar-divide').style.width = Math.max(0, Math.min(100, state.divide)) + "%";
+        
+        document.getElementById('val-mental').innerText = Math.floor(state.mental) + "%";
+        document.getElementById('bar-mental').style.width = Math.max(0, Math.min(100, state.mental)) + "%";
+
+        document.getElementById('val-time').innerText = state.time;
+    }
+
+    // --- メッセージのレンダリング ---
+    function renderInbox() {
+        const inbox = document.getElementById('inbox');
+        inbox.innerHTML = '';
+        
+        if (state.activeMessages.length === 0) {
+            inbox.innerHTML = '<div style="color: gray; text-align: center; margin-top: 50px;">未読メッセージはありません。</div>';
+            return;
+        }
+
+        state.activeMessages.forEach(msg => {
+            const div = document.createElement('div');
+            div.className = `message ${msg.type}`;
+            div.innerHTML = `
+                <div class="msg-header">
+                    <span>FROM: ${msg.sender}</span>
+                </div>
+                <div>${msg.text}</div>
+                <div class="actions">
+                    <button onclick="handleMsg(${msg.id}, 'resolve')" ${state.time < msg.cost ? 'disabled' : ''}>対応する (Cost: ${msg.cost})</button>
+                    <button class="btn-trash" onclick="handleMsg(${msg.id}, 'trash')">ゴミ箱へ (Cost: 0)</button>
+                </div>
+            `;
+            inbox.appendChild(div);
+        });
+    }
+
+    // --- メッセージ処理（トリアージ） ---
+    function handleMsg(id, action) {
+        const msgIndex = state.activeMessages.findIndex(m => m.id === id);
+        if (msgIndex === -1) return;
+        
+        const msg = state.activeMessages[msgIndex];
+        
+        if (action === 'resolve') {
+            if (state.time < msg.cost) return; // リソース不足
+            state.time -= msg.cost;
+            applyEffects(msg.onResolve);
+            addNews(`[ログ] ${msg.sender}への個別対応を実行しました。`);
+        } else if (action === 'trash') {
+            // ゴミ箱に入れた場合のペナルティ（闇の蓄積）
+            applyEffects(msg.onTrash);
+            addNews(`[ログ] 警告: 未対応のメッセージを破棄しました。`);
+        }
+
+        // メッセージをリストから削除
+        state.activeMessages.splice(msgIndex, 1);
+        
+        updateUI();
+        renderInbox();
+    }
+
+    // --- パラメーター変動の適用 ---
+    function applyEffects(effects) {
+        if (!effects) return;
+        if (effects.rev) state.rev += effects.rev;
+        if (effects.stock) state.stock += effects.stock;
+        if (effects.divide) state.divide += effects.divide;
+        if (effects.mental) state.mental += effects.mental;
+        if (effects.time) state.time += effects.time;
+    }
+
+    // --- ニュースフィードの追加 ---
+    function addNews(text) {
+        const feed = document.getElementById('news-feed');
+        const item = document.createElement('div');
+        item.className = 'news-item';
+        item.innerText = "> " + text;
+        feed.prepend(item);
+    }
+
+    // --- ターン終了処理 ---
+    function endTurn() {
+        // 未対応メッセージの強制破棄ペナルティ
+        state.activeMessages.forEach(msg => {
+            applyEffects(msg.onTrash);
+        });
+        
+        // スライダーの値を取得
+        const engage = parseInt(document.getElementById('slider-engage').value);
+        const mod = parseInt(document.getElementById('slider-mod').value);
+
+        // アルゴリズムによる今月の結果計算
+        // エンゲージメントが高いほど収益と分断が上がる。メンタルは下がる。
+        const revGain = (engage / 100) * 8.0 - (mod / 100) * 2.0; 
+        state.rev += revGain;
+        
+        state.divide += (engage / 10) - (mod / 15);
+        state.mental -= (engage / 15) - (mod / 10);
+
+        // 目標収益未達ペナルティ
+        if (state.rev < state.targetRev) {
+            state.stock -= 15;
+            addNews("ニュース: Synapse社の収益未達により株価が下落。");
+        } else {
+            state.stock += 5;
+            addNews("ニュース: 決算好調。株主はアルゴリズムを評価。");
+        }
+
+        // 限界値チェック（ゲームオーバー判定）
+        if (state.stock <= 0) {
+            alert("【GAME OVER】株価が暴落し、あなたはCEOから解任されました。会社は倒産しました。");
+            location.reload(); return;
+        }
+        if (state.divide >= 100) {
+            alert("【BAD END (欲望の特異点)】社会分断が限界を突破し、暴動が発生。政府によりSNSは強制停止されました。しかし、株価は過去最高でした。");
+            location.reload(); return;
+        }
+        if (state.mental <= 0) {
+            alert("【BAD END (無菌室の亡霊)】ユーザーの精神が崩壊し、大規模な訴訟に発展。誰もいなくなったSNSだけが残りました。");
+            location.reload(); return;
+        }
+
+        // 次の月へ
+        state.month++;
+        
+        if (state.month > state.maxMonth) {
+            alert("【DEMO CLEAR】デモ版のプレイ期間が終了しました。あなたは狂ったシステムの中で生き残りました。\n最終株価: $" + state.stock.toFixed(1) + "\n社会分断: " + Math.floor(state.divide) + "%");
+            location.reload(); return;
+        }
+
+        // 次のターンの準備
+        state.time = 3 + (state.month > 2 ? 0 : 1); // 序盤は少し余裕がある
+        
+        // 目標収益の引き上げ（残酷な資本主義）
+        if (state.month === 2) state.targetRev = 15.0;
+        if (state.month === 3) state.targetRev = 20.0;
+        if (state.month === 4) state.targetRev = 25.0;
+        if (state.month === 5) state.targetRev = 35.0; // ほぼ「炎上」させないと届かない
+
+        // シナリオメッセージのロード
+        state.activeMessages = scenarios[state.month] ? [...scenarios[state.month]] : [];
+        
+        addNews(`--- 月次決算終了：Month ${state.month} 開始 ---`);
+        
+        // UIリセット
+        document.getElementById('slider-engage').value = engage; // 維持
+        document.getElementById('slider-mod').value = mod; // 維持
+        updateUI();
+        renderInbox();
+    }
+
+    // --- 初期化 ---
+    window.onload = () => {
+        state.activeMessages = [...scenarios[1]];
+        updateUI();
+        renderInbox();
+    };
+</script>
+
+</body>
+</html>
