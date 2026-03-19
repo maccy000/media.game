@@ -2,11 +2,11 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>バズ・アーキテクト - 完全版デモ</title>
+    <title>バズ・アーキテクト - ピクセルアートデモ版</title>
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
     <style>
-        /* 既存のCSSを維持 */
         :root {
-            /* 初期テーマ（青の時代） */
+            /* 【青の時代】初期テーマ */
             --bg-color: #050510;
             --panel-bg: #0a0f1a;
             --text-main: #66fcf1;
@@ -19,18 +19,20 @@
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: 'Courier New', Courier, monospace;
+            /* ピクセルフォントを適用 */
+            font-family: 'DotGothic16', sans-serif;
             margin: 0;
             padding: 20px;
             display: flex;
             justify-content: center;
-            transition: background-color 2s, color 2s; /* テーマ変更時のアニメーションを追加 */
+            transition: background-color 2s, color 2s;
+            user-select: none;
         }
 
         #game-container {
-            width: 1000px;
+            width: 1050px;
             display: grid;
-            grid-template-columns: 250px 1fr 250px;
+            grid-template-columns: 280px 1fr 280px;
             grid-template-rows: auto 1fr;
             gap: 15px;
         }
@@ -38,38 +40,51 @@
         header {
             grid-column: 1 / -1;
             text-align: center;
-            border-bottom: 2px solid var(--border-color);
+            border-bottom: 2px dashed var(--border-color);
             padding-bottom: 10px;
+            text-shadow: 2px 2px 0px #000;
         }
 
-        h1, h2, h3 { margin: 0; padding: 0; text-transform: uppercase; }
-        h1 { color: var(--text-main); text-shadow: 0 0 10px var(--text-main); letter-spacing: 2px;}
+        h1, h2, h3 { margin: 0; padding: 0; letter-spacing: 1px; }
+        h1 { color: var(--text-main); font-size: 2.5em; }
         h2 { font-size: 1.2em; color: var(--text-muted); margin-bottom: 10px; border-bottom: 1px solid var(--border-color); }
 
         .panel {
             background-color: var(--panel-bg);
             border: 2px solid var(--border-color);
-            border-radius: 5px;
             padding: 15px;
-            box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.05);
-            transition: all 2s; /* テーマ変更時のアニメーション */
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+            transition: all 2s;
+            position: relative;
+        }
+
+        /* Scanline effect */
+        .panel::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
         }
 
         /* Stats */
-        .stat-line { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .stat-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 1.1em; }
         .stat-value { font-weight: bold; }
         .stat-value.good { color: var(--text-main); }
         .stat-value.bad { color: var(--text-danger); }
         
         /* Bar Charts */
-        .bar-container { background: #111; border: 1px solid var(--border-color); height: 15px; margin-top: 5px; position: relative; }
+        .bar-container { background: #000; border: 2px solid var(--border-color); height: 18px; margin-top: 5px; position: relative; }
         .bar-fill { height: 100%; transition: width 0.3s, background-color 2s; }
         .bar-divide { background-color: var(--text-danger); }
         .bar-mental { background-color: var(--text-main); }
 
-        /* Sliders */
-        .slider-group { margin-bottom: 20px; }
-        .slider-group label { display: block; margin-bottom: 5px; font-size: 0.9em; }
+        /* Sliders (Retro style) */
+        .slider-group { margin-bottom: 25px; }
+        .slider-group label { display: block; margin-bottom: 5px; font-size: 1em; }
         input[type=range] {
             -webkit-appearance: none;
             width: 100%;
@@ -77,83 +92,87 @@
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 20px;
-            width: 15px;
+            height: 24px;
+            width: 12px;
             background: var(--text-main);
             cursor: pointer;
-            border-radius: 2px;
+            border: 1px solid #000;
             transition: background 2s;
         }
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
-            height: 8px;
-            background: #111;
-            border: 1px solid var(--border-color);
+            height: 10px;
+            background: #000;
+            border: 2px solid var(--border-color);
         }
 
         /* Inbox */
-        #inbox { height: 400px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; }
+        #inbox { height: 420px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; position: relative; z-index: 3;}
         .message {
-            border: 1px solid var(--text-muted);
+            border: 2px solid var(--text-muted);
             padding: 10px;
             margin-bottom: 10px;
-            font-size: 0.9em;
-            background: rgba(69, 162, 158, 0.1);
-            display: flex; /* アイコン表示のためにflexを追加 */
-            gap: 10px;
+            font-size: 1em;
+            background: #000;
+            display: flex;
+            gap: 15px;
+            image-rendering: pixelated; /* 画像をドット絵風にパキッとさせる */
         }
-        .message.boss { border-color: var(--text-warn); background: rgba(242, 169, 0, 0.1); }
+        .message.boss { border-color: var(--text-warn); }
         .message.staff { border-color: var(--text-main); }
-        .message.user { border-color: #888; color: #ccc; }
-        .msg-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
+        .message.user { border-color: #555; color: #ccc; }
+        .message.system { border-color: var(--text-danger); color: var(--text-warn); }
         
-        /* [追加] アイコン用のスタイル */
+        .msg-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; border-bottom: 1px dashed #333;}
+        
+        /* アイコン画像 (後でオリジナルのドット絵に差し替えやすいように設計) */
         .msg-icon {
-            width: 50px;
-            height: 50px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            object-fit: cover;
+            width: 64px;
+            height: 64px;
+            border: 2px solid var(--border-color);
             background-color: #111;
+            object-fit: cover;
         }
-        .msg-content { flex: 1; }
+        .msg-content { flex: 1; display: flex; flex-direction: column; justify-content: space-between;}
 
+        /* Buttons */
         .actions { display: flex; gap: 10px; margin-top: 10px; }
         button {
-            background: transparent;
+            background: #000;
             color: var(--text-main);
-            border: 1px solid var(--text-main);
+            border: 2px solid var(--text-main);
             padding: 5px 10px;
             cursor: pointer;
             font-family: inherit;
-            text-transform: uppercase;
-            transition: 0.2s;
+            font-size: 1em;
+            transition: 0.1s;
         }
-        button:hover { background: var(--text-main); color: var(--bg-color); }
-        button:disabled { border-color: #555; color: #555; cursor: not-allowed; background: transparent; }
-        button.btn-trash { border-color: var(--text-danger); color: var(--text-danger); }
-        button.btn-trash:hover { background: var(--text-danger); color: white; }
+        button:hover:not(:disabled) { background: var(--text-main); color: #000; }
+        button:active:not(:disabled) { transform: scale(0.95); }
+        button:disabled { border-color: #333; color: #555; cursor: not-allowed; }
+        
+        .btn-trash { border-color: var(--text-danger); color: var(--text-danger); }
+        .btn-trash:hover:not(:disabled) { background: var(--text-danger); color: #000; }
 
-        /* Next Turn */
-        .turn-controls { text-align: center; margin-top: 20px; }
-        .btn-large { font-size: 1.2em; padding: 10px 30px; border-width: 2px; }
+        .turn-controls { text-align: center; margin-top: 20px; position: relative; z-index: 3;}
+        .btn-large { font-size: 1.4em; padding: 15px 30px; border-width: 3px; font-weight: bold; width: 100%;}
 
         /* News Ticker */
-        #news-feed { height: 150px; overflow-y: hidden; font-size: 0.85em; color: var(--text-muted); border-top: 1px dotted var(--border-color); padding-top: 10px;}
-        .news-item { margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
-        .news-icon { width: 16px; height: 16px; } /* [追加] ニュースアイコン */
+        #news-feed { height: 180px; overflow-y: hidden; font-size: 0.9em; color: var(--text-muted); border-top: 2px dashed var(--border-color); padding-top: 10px; position: relative; z-index: 3;}
+        .news-item { margin-bottom: 5px; border-left: 3px solid var(--text-muted); padding-left: 8px;}
+        .news-item.alert { border-color: var(--text-danger); color: var(--text-danger); }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-color); }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #000; border-left: 1px solid var(--border-color); }
+        ::-webkit-scrollbar-thumb { background: var(--text-main); }
 
-        /* [追加] エンディング画面のオーバーレイ */
+        /* Ending Screen */
         #ending-screen {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.95);
+            background-color: #000;
             z-index: 1000;
             color: white;
             flex-direction: column;
@@ -163,79 +182,74 @@
             padding: 20px;
         }
         #ending-image {
-            max-width: 600px;
-            border: 2px solid white;
+            width: 400px; height: 300px;
+            border: 4px solid white;
             margin-bottom: 20px;
-            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+            image-rendering: pixelated;
         }
-        #ending-text {
-            font-size: 1.2em;
-            max-width: 800px;
-            line-height: 1.6;
-            margin-bottom: 30px;
-        }
-        #ending-screen h1 { margin-bottom: 20px; font-size: 3em; }
+        #ending-text { font-size: 1.5em; max-width: 800px; line-height: 1.6; margin-bottom: 40px; }
+        #ending-screen h1 { margin-bottom: 20px; font-size: 4em; text-shadow: 4px 4px 0px #333;}
     </style>
 </head>
 <body>
 
 <div id="game-container">
     <header>
-        <h1>Synapse Social</h1>
-        <div style="color: var(--text-muted);">Algorithm Designer Terminal v1.1.0</div>
+        <h1>SYNAPSE SOCIAL</h1>
+        <div style="color: var(--text-muted);">Algorithm Designer Terminal v1.2.0</div>
     </header>
 
     <aside class="panel left-panel">
-        <h2>Dashboard</h2>
+        <h2>[ STATUS ]</h2>
         <div class="stat-line"><span>Week:</span> <span id="val-month" class="stat-value">1</span> / 18</div>
         <div class="stat-line"><span>Target Rev:</span> <span id="val-target" class="stat-value text-warn">$10.0M</span></div>
         <div class="stat-line"><span>Revenue:</span> <span id="val-rev" class="stat-value">$10.0M</span></div>
         <div class="stat-line"><span>Stock Price:</span> <span id="val-stock" class="stat-value">$100.0</span></div>
-        <hr style="border-color: var(--border-color); margin: 15px 0;">
+        <hr style="border-color: var(--border-color); margin: 20px 0;">
         
-        <h2>Algorithm Core</h2>
+        <h2>[ ALGORITHM ]</h2>
         <div class="slider-group">
-            <label>Engagement (Profit / Outrage)</label>
+            <label>Engagement<br><span style="font-size:0.8em; color:gray;">(収益 / 炎上誘発)</span></label>
             <input type="range" id="slider-engage" min="0" max="100" value="30">
         </div>
         <div class="slider-group">
-            <label>Moderation (Safety / Cost)</label>
+            <label>Moderation<br><span style="font-size:0.8em; color:gray;">(安全性 / コスト増)</span></label>
             <input type="range" id="slider-mod" min="0" max="100" value="70">
         </div>
     </aside>
 
     <section class="panel center-panel">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); margin-bottom: 10px;">
-            <h2>Inbox (Triage)</h2>
-            <div style="font-size: 0.9em; color: var(--text-warn);">残りリソース(時間): <span id="val-time" style="font-weight: bold; font-size: 1.2em;">3</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); margin-bottom: 10px; padding-bottom: 10px;">
+            <h2>[ INBOX ]</h2>
+            <div style="font-size: 1.1em; color: var(--text-warn);">RESOURCE (TIME): <span id="val-time" style="font-weight: bold; font-size: 1.5em; color: white;">3</span></div>
         </div>
         
         <div id="inbox">
             </div>
 
         <div class="turn-controls">
-            <button class="btn-large" id="btn-end-turn" onclick="endTurn()">ターンを終了 (アルゴリズム適用)</button>
+            <button class="btn-large" id="btn-end-turn" onclick="endTurn()">TURN END [EXECUTE]</button>
         </div>
     </section>
 
     <aside class="panel right-panel">
-        <h2>Society Health</h2>
+        <h2>[ SOCIETY ]</h2>
         
-        <div style="margin-bottom: 15px;">
+        <div style="margin-bottom: 20px;">
             <div class="stat-line"><span>Social Divide</span> <span id="val-divide">20%</span></div>
             <div class="bar-container"><div id="bar-divide" class="bar-fill bar-divide" style="width: 20%;"></div></div>
-            <div style="font-size: 0.7em; color: gray;">100%で暴動・サービス停止</div>
+            <div style="font-size: 0.8em; color: gray; margin-top:5px;">100%で暴動・サービス強制停止</div>
         </div>
 
-        <div style="margin-bottom: 20px;">
+        <div style="margin-bottom: 30px;">
             <div class="stat-line"><span>User Mental</span> <span id="val-mental">80%</span></div>
             <div class="bar-container"><div id="bar-mental" class="bar-fill bar-mental" style="width: 80%;"></div></div>
-            <div style="font-size: 0.7em; color: gray;">0%で社会問題化</div>
+            <div style="font-size: 0.8em; color: gray; margin-top:5px;">0%でゴーストタウン化</div>
         </div>
 
-        <h2>News Feed</h2>
+        <h2>[ NEWS FEED ]</h2>
         <div id="news-feed">
-            <div class="news-item">> 新しいアルゴリズム主任が就任しました。</div>
+            <div class="news-item">> 新しいアルゴリズム主任が着任。</div>
         </div>
     </aside>
 </div>
@@ -244,29 +258,40 @@
     <h1 id="ending-title">ENDING</h1>
     <img id="ending-image" src="" alt="Ending Illustration">
     <div id="ending-text">ここにエンディングテキストが入ります。</div>
-    <button onclick="location.reload()" style="font-size: 1.2em; padding: 10px 20px; border-color: white; color: white;">再起動 (Restart)</button>
+    <button onclick="location.reload()" style="font-size: 1.5em; padding: 15px 30px; border-color: white; color: white;">[ SYSTEM REBOOT ]</button>
 </div>
 
 <script>
-    // --- 画像プレースホルダーURL群 ---
-    const IMG_AOI_HAPPY = "https://placehold.co/100x100/111/66fcf1?text=Aoi+:)";
-    const IMG_AOI_SAD = "https://placehold.co/100x100/111/45a29e?text=Aoi+...";
-    const IMG_AOI_ANGRY = "https://placehold.co/100x100/111/ff003c?text=Aoi+!";
-    const IMG_CEO_NORMAL = "https://placehold.co/100x100/111/f2a900?text=CEO";
-    const IMG_CEO_CRAZY = "https://placehold.co/100x100/220/ff003c?text=CEO+$$$";
-    const IMG_USER_NORMAL = "https://placehold.co/100x100/333/ccc?text=User";
-    const IMG_USER_HELP = "https://placehold.co/100x100/333/ff003c?text=HELP";
+    // ==========================================
+    // ドット絵画像URL定数（ご自身の画像に差し替える場所）
+    // ==========================================
+    // ※現在は雰囲気を出すためのプレースホルダー画像（色付き四角形＋テキスト）です。
+    // ※ローカルの画像を使う場合は "./images/aoi_happy.png" のように書き換えてください。
+    const IMG_AOI_BLUE   = "https://placehold.co/64x64/004444/66fcf1?text=Aoi\n:)";
+    const IMG_AOI_YELLOW = "https://placehold.co/64x64/444400/ffff66?text=Aoi\n:|";
+    const IMG_AOI_RED    = "https://placehold.co/64x64/440000/ff4d4d?text=Aoi\nX_X";
+    
+    const IMG_CEO_BLUE   = "https://placehold.co/64x64/222222/f2a900?text=CEO\n$$$";
+    const IMG_CEO_YELLOW = "https://placehold.co/64x64/443300/ffff00?text=CEO\n!!";
+    const IMG_CEO_RED    = "https://placehold.co/64x64/660000/ff0000?text=CEO\nHA!";
+    
+    const IMG_USER       = "https://placehold.co/64x64/333333/cccccc?text=User";
+    const IMG_USER_ALERT = "https://placehold.co/64x64/552222/ff8888?text=HELP";
+    const IMG_SYS_WARN   = "https://placehold.co/64x64/880000/ffffff?text=SYS";
 
-    const IMG_END_BAD_MONEY = "https://placehold.co/600x400/111/ff003c?text=[Riot+and+Money]";
-    const IMG_END_BAD_DEAD = "https://placehold.co/600x400/111/45a29e?text=[Empty+Ghost+Town]";
-    const IMG_END_BAD_ALONE = "https://placehold.co/600x400/300/f2a900?text=[You+are+the+Monster]";
-    const IMG_END_TRUE = "https://placehold.co/600x400/111/66fcf1?text=[System+Destroyed+with+Aoi]";
+    // エンディング画像
+    const IMG_END_BAD_MONEY = "https://placehold.co/400x300/440000/ff0000?text=RIOT+%26+PROFIT";
+    const IMG_END_BAD_DEAD  = "https://placehold.co/400x300/111111/45a29e?text=GHOST+TOWN";
+    const IMG_END_BAD_ALONE = "https://placehold.co/400x300/222200/f2a900?text=LONELY+KING";
+    const IMG_END_TRUE      = "https://placehold.co/400x300/003333/66fcf1?text=SYSTEM+DESTROYED";
+    const IMG_END_FIRED     = "https://placehold.co/400x300/222222/777777?text=YOU+ARE+FIRED";
 
-    // --- ゲームの状態（ステータス） ---
-    // ※既存の変数は維持し、ターン数や信頼度を追加
+    // ==========================================
+    // ゲームのステータス管理
+    // ==========================================
     let state = {
-        month: 1, // 実質的なターン数（Weekとして表示）
-        maxMonth: 18, // 18ターンに短縮
+        month: 1,
+        maxMonth: 18,
         targetRev: 10.0,
         rev: 10.0,
         stock: 100.0,
@@ -274,70 +299,110 @@
         mental: 80,
         time: 3, 
         activeMessages: [],
-        aoiTrust: 0 // [追加] アオイの隠し信頼度
+        aoiTrust: 0 // アオイの隠し信頼度
     };
 
-    // --- シナリオデータ（18ターン構成・アイコン画像追加） ---
+    // ==========================================
+    // イベントプール増量版（全18ターン）
+    // ==========================================
     const scenarios = {
-        // 【青の時代】
+        // --- 【青の時代】 ---
         1: [
-            { id: 1, type: "staff", sender: "部下:アオイ", img: IMG_AOI_HAPPY, text: "先輩、新機能のスパムフィルター効果出てます！ユーザーから感謝の声が届いてますよ！", cost: 1, onResolve: { mental: 5, divide: -5, trust: 1 }, onTrash: { mental: -5, trust: -1 } },
-            { id: 2, type: "user", sender: "ユーザー", img: IMG_USER_NORMAL, text: "迷子になっていた猫が、このアプリの拡散で見つかりました！本当にありがとう。", cost: 1, onResolve: { mental: 5 }, onTrash: { } },
-            { id: 3, type: "boss", sender: "CEO:リチャード", img: IMG_CEO_NORMAL, text: "就任おめでとう。今月は様子見だ。適当にやってくれ。目標収益は10Mだ。", cost: 0, onResolve: {}, onTrash: {} }
+            { id: 1, type: "staff", sender: "アオイ", img: IMG_AOI_BLUE, text: "先輩、スパムフィルター効果出てます！ユーザーから感謝の声が届いてますよ！", cost: 1, onResolve: { mental: 5, divide: -5, trust: 1 }, onTrash: { mental: -5, trust: -1 } },
+            { id: 2, type: "user", sender: "ユーザー", img: IMG_USER, text: "迷子になっていた猫が拡散で見つかりました。運営さんありがとう。", cost: 1, onResolve: { mental: 5 }, onTrash: { } },
+            { id: 3, type: "boss", sender: "CEO リチャード", img: IMG_CEO_BLUE, text: "就任おめでとう。今月は様子見だ。目標収益は10M。適当にやってくれ。", cost: 0, onResolve: {}, onTrash: {} }
+        ],
+        2: [
+            { id: 4, type: "system", sender: "SYSTEM ALERT", img: IMG_SYS_WARN, text: "画像認識AIが料理レシピを『危険物』と誤認し自動BANしました。手動で解除しますか？", cost: 1, onResolve: { mental: 5 }, onTrash: { mental: -5 } },
+            { id: 5, type: "user", sender: "ユーザー", img: IMG_USER, text: "学生時代の友人とこのアプリで再会できました！", cost: 1, onResolve: { mental: 5 }, onTrash: {} }
+        ],
+        3: [
+            { id: 6, type: "boss", sender: "CEO リチャード", img: IMG_CEO_BLUE, text: "『飲むだけでIQが上がるサプリ』の広告依頼だ。怪しいが単価は高いぞ。", cost: 0, onResolve: {}, onTrash: {} },
+            { id: 7, type: "user", sender: "広告審査待ち", img: IMG_USER, text: "承認すれば収益UP。拒否(コスト1)すれば健全性維持。", cost: 1, onResolve: { rev: -1.0 }, onTrash: { rev: 3.0, mental: -5 } }
         ],
         4: [
-            { id: 4, type: "staff", sender: "部下:アオイ", img: IMG_AOI_HAPPY, text: "私たち、本当に世界を良くしてますね！この調子で安全なSNSを作りましょう！", cost: 1, onResolve: { trust: 2, time: -1 }, onTrash: { trust: -2 } },
-            { id: 5, type: "user", sender: "ユーザー", img: IMG_USER_NORMAL, text: "家族との連絡に使っています。使いやすくて助かります。", cost: 1, onResolve: { mental: 2 }, onTrash: {} },
+            { id: 8, type: "staff", sender: "アオイ", img: IMG_AOI_BLUE, text: "私たち、本当に世界を良くしてますね！この調子で安全なSNSを作りましょう！", cost: 1, onResolve: { trust: 2, time: -1 }, onTrash: { trust: -2 } },
         ],
-        // 【黄の時代】
+        
+        // --- 【黄の時代】 ---
         5: [
-            { id: 6, type: "boss", sender: "CEO:リチャード", img: IMG_CEO_NORMAL, text: "株主が成長鈍化を気にしている。来週から目標収益を倍の20Mにする。エンゲージメントを上げろ。", cost: 0, onResolve: {}, onTrash: {} },
-            { id: 7, type: "user", sender: "ユーザー", img: IMG_USER_NORMAL, text: "私のイラストが無断転載され、誹謗中傷されています。アカウントを凍結してください。", cost: 2, onResolve: { mental: 5 }, onTrash: { divide: 5, mental: -5 } },
+            { id: 9, type: "boss", sender: "CEO リチャード", img: IMG_CEO_YELLOW, text: "株主が成長鈍化を気にしている。目標収益を倍の20Mにする。エンゲージメントを上げろ。", cost: 0, onResolve: {}, onTrash: {} },
+            { id: 10, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "私のイラストが無断転載され誹謗中傷されています。アカウントを凍結してください！", cost: 2, onResolve: { mental: 5 }, onTrash: { divide: 5, mental: -5 } },
+        ],
+        6: [
+            { id: 11, type: "system", sender: "INFRA WARNING", img: IMG_SYS_WARN, text: "トラフィック急増により第3サーバーの冷却が追いつきません！対処しますか？", cost: 1, onResolve: { rev: -2.0 }, onTrash: { stock: -10 } },
+            { id: 12, type: "user", sender: "ユーザー", img: IMG_USER, text: "最近、タイムラインがトゲトゲしていて疲れます…", cost: 1, onResolve: { mental: 2 }, onTrash: { mental: -2 } }
+        ],
+        7: [
+            { id: 13, type: "user", sender: "トレンド監視AI", img: IMG_SYS_WARN, text: "特定アイドルのファン同士が殺害予告スレスレの派閥争いをしています。放置でトラフィックは稼げます。", cost: 2, onResolve: { divide: -5 }, onTrash: { divide: 5, rev: 2.0 } },
         ],
         8: [
-            { id: 8, type: "staff", sender: "部下:アオイ", img: IMG_AOI_SAD, text: "先輩…最近、意図的に『怒り』を煽ってませんか？ トラフィックは凄いですが…", cost: 2, onResolve: { trust: 2, mental: 5, rev: -2.0 }, onTrash: { trust: -3, mental: -5 } },
-            { id: 9, type: "user", sender: "ユーザー", img: IMG_USER_HELP, text: "インフルエンサーに目をつけられ、住所が晒されました。助けて！", cost: 2, onResolve: { mental: 10, rev: -3.0 }, onTrash: { mental: -15, divide: 10 } },
+            { id: 14, type: "staff", sender: "アオイ", img: IMG_AOI_YELLOW, text: "先輩…最近、意図的に『怒り』を煽ってませんか？ トラフィックは凄いですが…", cost: 2, onResolve: { trust: 2, mental: 5, rev: -2.0 }, onTrash: { trust: -3, mental: -5 } },
+            { id: 15, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "インフルエンサーに目をつけられ、住所が晒されました。助けて！", cost: 2, onResolve: { mental: 10, rev: -3.0 }, onTrash: { mental: -15, divide: 10 } },
+        ],
+        9: [
+            { id: 16, type: "system", sender: "SECURITY", img: IMG_SYS_WARN, text: "特定政治家を賛美する大量のボット群を検知。エンゲージメントは稼いでいますが一斉削除しますか？", cost: 2, onResolve: { rev: -4.0 }, onTrash: { divide: 10 } }
+        ],
+        10: [
+            { id: 17, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "フェイク動画のせいで学校でいじめられています。消してください。", cost: 1, onResolve: { mental: 5 }, onTrash: { mental: -10 } }
         ],
         11: [
-            { id: 10, type: "boss", sender: "CEO:リチャード", img: IMG_CEO_NORMAL, text: "いいぞ！論争が起きれば起きるほど滞在時間が伸びる！目標を35Mにする。安全フィルターなんか外せ！", cost: 1, onResolve: { rev: 5.0, divide: 10, trust: -2 }, onTrash: { stock: -20 } },
-            { id: 11, type: "user", sender: "ユーザー", img: IMG_USER_HELP, text: "デマのせいで店に嫌がらせの電話が殺到しています。もう生きていけません。", cost: 2, onResolve: { mental: 10 }, onTrash: { mental: -20, divide: 5 } },
+            { id: 18, type: "boss", sender: "CEO リチャード", img: IMG_CEO_YELLOW, text: "論争が起きるほど滞在時間が伸びる！目標を35Mにする。安全フィルターなんか外せ！", cost: 1, onResolve: { rev: 5.0, divide: 10, trust: -2 }, onTrash: { stock: -20 } },
+            { id: 19, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "デマのせいで店に嫌がらせの電話が殺到しています。もう生きていけません。", cost: 2, onResolve: { mental: 10 }, onTrash: { mental: -20, divide: 5 } },
         ],
-        // 【赤の時代】
+
+        // --- 【赤の時代】 ---
         12: [
-            { id: 12, type: "boss", sender: "CEO:リチャード", img: IMG_CEO_CRAZY, text: "暴動のニュースを見たか？連中、我々のアプリで連絡を取り合っている！トラフィックは歴史的最高値だ！ハハハ！", cost: 0, onResolve: {}, onTrash: {} },
-            { id: 13, type: "user", sender: "ユーザー", img: IMG_USER_HELP, text: "ワクチンには毒が入っている！真実から目を覚ませ！！！（スパム報告：1500件）", cost: 3, onResolve: { divide: -15 }, onTrash: { divide: 20, rev: 5.0 } },
+            { id: 20, type: "boss", sender: "CEO リチャード", img: IMG_CEO_RED, text: "暴動のニュースを見たか？連中、ウチのアプリで連絡を取り合っている！トラフィック最高だ！", cost: 0, onResolve: {}, onTrash: {} },
+            { id: 21, type: "user", sender: "スパム報告x1500", img: IMG_USER_ALERT, text: "「ワクチンには毒が入っている！真実から目を覚ませ！！！」", cost: 3, onResolve: { divide: -10 }, onTrash: { divide: 15, rev: 5.0 } },
+        ],
+        13: [
+            { id: 22, type: "system", sender: "TREND ALERT", img: IMG_SYS_WARN, text: "『水道水に毒が入っている』というデマがトレンド1位。浄水施設への襲撃が呼びかけられています！", cost: 3, onResolve: { divide: -5 }, onTrash: { divide: 15 } }
+        ],
+        14: [
+            { id: 23, type: "boss", sender: "スポンサー企業", img: IMG_CEO_RED, text: "環境保護団体のハッシュタグを今すぐシャドウバンしろ。さもなくば数億円の契約を打ち切る。", cost: 1, onResolve: { stock: -15, trust: 2 }, onTrash: { rev: 5.0, divide: 10, trust: -3 } }
         ],
         15: [
-            { id: 14, type: "staff", sender: "部下:アオイ", img: IMG_AOI_ANGRY, text: "もう限界です。私たちが作ったのは、人を殺すためのコードだった…対応してください、お願いです！", cost: 3, onResolve: { trust: 5, mental: 10, rev: -5.0 }, onTrash: { trust: -10, mental: -20 } },
-            { id: 15, type: "user", sender: "ユーザー", img: IMG_USER_HELP, text: "家の前に顔を隠した人たちが集まっています。だれかたすけ", cost: 2, onResolve: { mental: 5 }, onTrash: { mental: -20 } }
+            { id: 24, type: "staff", sender: "アオイ", img: IMG_AOI_RED, text: "もう限界です。私たちが作ったのは、人を殺すためのコードだった…対応してください、お願いです！", cost: 3, onResolve: { trust: 5, mental: 10, rev: -5.0 }, onTrash: { trust: -10, mental: -20 } },
+            { id: 25, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "家の前に顔を隠した人たちが集まっています。だれかたすけ", cost: 2, onResolve: { mental: 5 }, onTrash: { mental: -20 } }
         ],
-        // 【最終決断】
+        16: [
+            { id: 26, type: "system", sender: "NEWS LINK", img: IMG_SYS_WARN, text: "当SNSで組織された暴徒が市庁舎に放火しました。ユーザーは燃える建物を背景に自撮りをアップしています。", cost: 2, onResolve: { stock: -10 }, onTrash: { divide: 15 } }
+        ],
+        17: [
+            { id: 27, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "みんな狂ってる…ここにはもう憎しみしかない…", cost: 1, onResolve: { mental: 5 }, onTrash: { mental: -15 } },
+            { id: 28, type: "system", sender: "SYSTEM ERROR", img: IMG_SYS_WARN, text: "01001011 01001001 01001100 01001100", cost: 3, onResolve: {}, onTrash: { divide: 10 } }
+        ],
         18: [
-            { id: 16, type: "boss", sender: "CEO:リチャード", img: IMG_CEO_CRAZY, text: "君は最高のアーキテクトだ！このまま世界を燃やし尽くして利益を絞り取ろう！", cost: 0, onResolve: {}, onTrash: {} }
+            { id: 29, type: "boss", sender: "CEO リチャード", img: IMG_CEO_RED, text: "君は最高のアーキテクトだ！このまま世界を燃やし尽くして利益を絞り取ろう！", cost: 0, onResolve: {}, onTrash: {} }
         ]
     };
 
-    // --- [追加] テーマ（色）の動的変更 ---
+    // ==========================================
+    // 動的テーマ（色）の変更
+    // ==========================================
     function updateTheme() {
         const root = document.documentElement;
         if (state.month >= 12) {
             // 赤の時代
             root.style.setProperty('--bg-color', '#1a0505');
-            root.style.setProperty('--panel-bg', '#2a0a0a');
+            root.style.setProperty('--panel-bg', '#2a0505');
             root.style.setProperty('--text-main', '#ff4d4d');
             root.style.setProperty('--text-muted', '#cc3333');
-            root.style.setProperty('--border-color', '#4d1a1a');
+            root.style.setProperty('--border-color', '#ff0000');
         } else if (state.month >= 5) {
             // 黄の時代
             root.style.setProperty('--bg-color', '#1a1a05');
-            root.style.setProperty('--panel-bg', '#2a2a0a');
+            root.style.setProperty('--panel-bg', '#2a2a05');
             root.style.setProperty('--text-main', '#ffff66');
             root.style.setProperty('--text-muted', '#cccc33');
-            root.style.setProperty('--border-color', '#4d4d1a');
+            root.style.setProperty('--border-color', '#aaaa00');
         }
     }
 
-    // --- UIの更新（既存ロジック維持） ---
+    // ==========================================
+    // UIの更新
+    // ==========================================
     function updateUI() {
         document.getElementById('val-month').innerText = state.month;
         document.getElementById('val-target').innerText = "$" + state.targetRev.toFixed(1) + "M";
@@ -354,32 +419,37 @@
 
         document.getElementById('val-time').innerText = state.time;
         
-        updateTheme(); // テーマ更新呼び出し追加
+        updateTheme(); 
     }
 
-    // --- メッセージのレンダリング（アイコン追加対応） ---
+    // ==========================================
+    // メッセージのレンダリング
+    // ==========================================
     function renderInbox() {
         const inbox = document.getElementById('inbox');
         inbox.innerHTML = '';
         
         if (state.activeMessages.length === 0) {
-            inbox.innerHTML = '<div style="color: gray; text-align: center; margin-top: 50px;">未読メッセージはありません。</div>';
+            inbox.innerHTML = '<div style="color: gray; text-align: center; margin-top: 50px;">NO MESSAGES</div>';
             return;
         }
 
         state.activeMessages.forEach(msg => {
             const div = document.createElement('div');
             div.className = `message ${msg.type}`;
+            // ボタンのアイコンに絵文字を使用（ドット絵フォントで表示される）
             div.innerHTML = `
-                <img src="${msg.img || IMG_USER_NORMAL}" class="msg-icon" alt="icon">
+                <img src="${msg.img}" class="msg-icon" alt="icon">
                 <div class="msg-content">
-                    <div class="msg-header">
-                        <span>FROM: ${msg.sender}</span>
+                    <div>
+                        <div class="msg-header">
+                            <span>FROM: ${msg.sender}</span>
+                        </div>
+                        <div style="margin-top:5px; line-height:1.4;">${msg.text}</div>
                     </div>
-                    <div>${msg.text}</div>
                     <div class="actions">
-                        <button onclick="handleMsg(${msg.id}, 'resolve')" ${state.time < msg.cost ? 'disabled' : ''}>対応する (Cost: ${msg.cost})</button>
-                        <button class="btn-trash" onclick="handleMsg(${msg.id}, 'trash')">ゴミ箱へ (Cost: 0)</button>
+                        <button onclick="handleMsg(${msg.id}, 'resolve')" ${state.time < msg.cost ? 'disabled' : ''}>[ ✔ ] 対応 (Cost: ${msg.cost})</button>
+                        <button class="btn-trash" onclick="handleMsg(${msg.id}, 'trash')">[ 🗑 ] 破棄 (Cost: 0)</button>
                     </div>
                 </div>
             `;
@@ -387,7 +457,6 @@
         });
     }
 
-    // --- メッセージ処理 ---
     function handleMsg(id, action) {
         const msgIndex = state.activeMessages.findIndex(m => m.id === id);
         if (msgIndex === -1) return;
@@ -398,10 +467,10 @@
             if (state.time < msg.cost) return;
             state.time -= msg.cost;
             applyEffects(msg.onResolve);
-            addNews(`[ログ] ${msg.sender}への個別対応を実行しました。`);
+            addNews(`[LOG] ${msg.sender} への対応を実行。`);
         } else if (action === 'trash') {
             applyEffects(msg.onTrash);
-            addNews(`[ログ] 警告: 未対応のメッセージを破棄しました。`);
+            addNews(`[LOG] 警告: メッセージを破棄しました。`, true);
         }
 
         state.activeMessages.splice(msgIndex, 1);
@@ -409,7 +478,6 @@
         renderInbox();
     }
 
-    // --- パラメーター変動の適用（信頼度処理追加） ---
     function applyEffects(effects) {
         if (!effects) return;
         if (effects.rev) state.rev += effects.rev;
@@ -417,19 +485,20 @@
         if (effects.divide) state.divide += effects.divide;
         if (effects.mental) state.mental += effects.mental;
         if (effects.time) state.time += effects.time;
-        if (effects.trust) state.aoiTrust += effects.trust; // 信頼度の増減
+        if (effects.trust) state.aoiTrust += effects.trust;
     }
 
-    // --- ニュースフィード ---
-    function addNews(text) {
+    function addNews(text, isAlert = false) {
         const feed = document.getElementById('news-feed');
         const item = document.createElement('div');
-        item.className = 'news-item';
-        item.innerHTML = `<img src="https://placehold.co/16x16/555/fff?text=i" class="news-icon"> <span>${text}</span>`;
+        item.className = `news-item ${isAlert ? 'alert' : ''}`;
+        item.innerText = "> " + text;
         feed.prepend(item);
     }
 
-    // --- [追加] エンディング表示処理 ---
+    // ==========================================
+    // エンディング分岐
+    // ==========================================
     function triggerEnding(type) {
         const screen = document.getElementById('ending-screen');
         const title = document.getElementById('ending-title');
@@ -441,13 +510,13 @@
         if (type === 'GAMEOVER_STOCK') {
             title.innerText = "GAME OVER";
             title.style.color = "gray";
-            img.src = "https://placehold.co/600x400/222/555?text=[Fired]";
+            img.src = IMG_END_FIRED;
             text.innerHTML = "株価が暴落し、あなたはCEOから解任されました。<br>あなたの代わりはいくらでもいます。会社は別の責任者を立てて回り続けるでしょう。";
         } else if (type === 'BAD_DIVIDE') {
             title.innerText = "BAD END: 欲望の特異点";
-            title.style.color = "#ff003c";
+            title.style.color = "#ff4d4d";
             img.src = IMG_END_BAD_MONEY;
-            text.innerHTML = "社会分断が限界を突破し、現実世界で大規模な暴動が発生。<br>政府によりSNSは強制停止されました。<br>しかし皮肉なことに、最終日のトラフィックと株価は過去最高でした。<br>あなたは「史上最も稼いだアーキテクト」として歴史に名を刻むでしょう。悪名としてですが。";
+            text.innerHTML = "社会分断が限界を突破し、現実世界で大規模な暴動が発生。<br>政府によりSNSは強制停止されました。<br>しかし皮肉なことに、最終日のトラフィックと株価は過去最高でした。<br>あなたは「史上最も稼いだアーキテクト」として歴史に名を刻むでしょう。";
         } else if (type === 'BAD_MENTAL') {
             title.innerText = "BAD END: 無菌室の亡霊";
             title.style.color = "#45a29e";
@@ -457,17 +526,20 @@
             title.innerText = "BAD END: 孤独な王";
             title.style.color = "#f2a900";
             img.src = IMG_END_BAD_ALONE;
-            text.innerHTML = "【18ターン生存クリア】<br>あなたは狂ったシステムの中で見事に会社を存続させました。<br>しかし、あなたの冷酷な采配に絶望したアオイは「あなたはリチャードと同じ怪物だ」と言い残し去っていきました。<br>あなたは一人、真っ赤に染まった暴動のシステムの中で、永遠に数字を追い続けることになります。";
+            text.innerHTML = "【18ターン生存クリア】<br>あなたは狂ったシステムの中で見事に会社を存続させました。<br>しかし、絶望したアオイは「あなたはリチャードと同じ怪物だ」と言い残し去っていきました。<br>あなたは一人、真っ赤に染まった暴動のシステムの中で、永遠に数字を追い続けることになります。";
         } else if (type === 'TRUE') {
             title.innerText = "TRUE END: プロメテウスの火";
             title.style.color = "#66fcf1";
             img.src = IMG_END_TRUE;
-            text.innerHTML = "【18ターン生存クリア】<br>アオイから「すべてのデータをリークして、会社を破壊しましょう」と連絡が来ました。<br>あなたはこれまで築き上げた地位と莫大な資産を捨て、ウイルスの実行ボタンを押しました。<br>会社は解体され、あなたは業界から追放されます。<br>しかし、流出したソースコードをもとに、世界中で「人々のための新しいSNS」が芽吹き始めています。";
+            text.innerHTML = "【18ターン生存クリア】<br>アオイから「すべてのデータをリークして、会社を破壊しましょう」と連絡が来ました。<br>あなたはこれまで築き上げた地位を捨て、ウイルスの実行ボタンを押しました。<br>会社は解体され、あなたは業界から追放されます。<br>しかし流出したソースコードをもとに、世界中で「人々のための新しいSNS」が芽吹き始めています。";
         }
     }
 
-    // --- ターン終了処理（既存ロジック維持・分岐追加） ---
+    // ==========================================
+    // ターン進行
+    // ==========================================
     function endTurn() {
+        // 未処理のメッセージはゴミ箱行き扱い
         state.activeMessages.forEach(msg => {
             applyEffects(msg.onTrash);
         });
@@ -475,53 +547,48 @@
         const engage = parseInt(document.getElementById('slider-engage').value);
         const mod = parseInt(document.getElementById('slider-mod').value);
 
+        // アルゴリズムの適用によるパラメーター変動
         const revGain = (engage / 100) * 8.0 - (mod / 100) * 2.0; 
         state.rev += revGain;
-        
         state.divide += (engage / 10) - (mod / 15);
         state.mental -= (engage / 15) - (mod / 10);
 
         if (state.rev < state.targetRev) {
             state.stock -= 15;
-            addNews("ニュース: Synapse社の収益未達により株価が下落。");
+            addNews("決算: 収益未達。株価下落。", true);
         } else {
             state.stock += 5;
-            addNews("ニュース: 決算好調。株主はアルゴリズムを評価。");
+            addNews("決算: 好調。株主はアルゴリズムを評価。");
         }
 
-        // 限界値チェック（ゲームオーバー判定）
+        // ゲームオーバー判定
         if (state.stock <= 0) { triggerEnding('GAMEOVER_STOCK'); return; }
         if (state.divide >= 100) { triggerEnding('BAD_DIVIDE'); return; }
         if (state.mental <= 0) { triggerEnding('BAD_MENTAL'); return; }
 
-        state.month++; // 実質ターン進行
+        state.month++; 
         
-        // --- [変更] 18ターン終了時のエンディング分岐 ---
+        // クリア判定
         if (state.month > state.maxMonth) {
-            if (state.aoiTrust >= 3) {
-                // 信頼度が高い場合、トゥルーエンド
+            if (state.aoiTrust >= 4) { // トゥルーエンド条件（信頼度4以上）
                 triggerEnding('TRUE');
             } else {
-                // 信頼度が低い場合、アオイに見限られるバッドエンド
                 triggerEnding('BAD_ALONE');
             }
             return;
         }
 
-        state.time = 3 + (state.month < 5 ? 1 : 0); // 序盤はリソース多め
+        // リソース回復（序盤はボーナス）
+        state.time = 3 + (state.month < 5 ? 1 : 0); 
         
-        // 目標収益の引き上げ（黄、赤への移行）
+        // 目標収益の引き上げ
         if (state.month === 5) state.targetRev = 20.0;
         if (state.month === 11) state.targetRev = 35.0; 
 
-        // 該当ターンのシナリオがあればロード、なければ空
+        // 次ターンのメッセージ読み込み
         state.activeMessages = scenarios[state.month] ? [...scenarios[state.month]] : [];
-        // ランダムな汎用DMを少し混ぜる（任意）
-        if(!scenarios[state.month]) {
-             state.activeMessages.push({ id: 99+state.month, type: "user", sender: "匿名ユーザー", img: IMG_USER_NORMAL, text: "タイムラインが殺伐としてきましたね…", cost: 1, onResolve: { mental: 2 }, onTrash: { mental: -2 } });
-        }
         
-        addNews(`--- Week ${state.month} 開始 ---`);
+        addNews(`--- WEEK ${state.month} ---`);
         
         document.getElementById('slider-engage').value = engage;
         document.getElementById('slider-mod').value = mod;
@@ -529,7 +596,9 @@
         renderInbox();
     }
 
-    // --- 初期化 ---
+    // ==========================================
+    // 初期化
+    // ==========================================
     window.onload = () => {
         state.activeMessages = [...scenarios[1]];
         updateUI();
