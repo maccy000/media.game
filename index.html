@@ -289,94 +289,194 @@
     // ==========================================
     // ゲームのステータス管理
     // ==========================================
-    let state = {
-        month: 1,
-        maxMonth: 18,
-        targetRev: 10.0,
-        rev: 10.0,
-        stock: 100.0,
-        divide: 20,
-        mental: 80,
-        time: 3, 
-        activeMessages: [],
-        aoiTrust: 0 // アオイの隠し信頼度
-    };
+    /* --- ここから貼り付け：全18週・完全版シナリオ＆経営データ --- */
 
-    // ==========================================
-    // イベントプール増量版（全18ターン）
-    // ==========================================
-    const scenarios = {
-        // --- 【青の時代】 ---
-        1: [
-            { id: 1, type: "staff", sender: "アオイ", img: IMG_AOI_BLUE, text: "先輩、スパムフィルター効果出てます！ユーザーから感謝の声が届いてますよ！", cost: 1, onResolve: { mental: 5, divide: -5, trust: 1 }, onTrash: { mental: -5, trust: -1 } },
-            { id: 2, type: "user", sender: "ユーザー", img: IMG_USER, text: "迷子になっていた猫が拡散で見つかりました。運営さんありがとう。", cost: 1, onResolve: { mental: 5 }, onTrash: { } },
-            { id: 3, type: "boss", sender: "CEO リチャード", img: IMG_CEO_BLUE, text: "就任おめでとう。今月は様子見だ。目標収益は10M。適当にやってくれ。", cost: 0, onResolve: {}, onTrash: {} }
-        ],
-        2: [
-            { id: 4, type: "system", sender: "SYSTEM ALERT", img: IMG_SYS_WARN, text: "画像認識AIが料理レシピを『危険物』と誤認し自動BANしました。手動で解除しますか？", cost: 1, onResolve: { mental: 5 }, onTrash: { mental: -5 } },
-            { id: 5, type: "user", sender: "ユーザー", img: IMG_USER, text: "学生時代の友人とこのアプリで再会できました！", cost: 1, onResolve: { mental: 5 }, onTrash: {} }
-        ],
-        3: [
-            { id: 6, type: "boss", sender: "CEO リチャード", img: IMG_CEO_BLUE, text: "『飲むだけでIQが上がるサプリ』の広告依頼だ。怪しいが単価は高いぞ。", cost: 0, onResolve: {}, onTrash: {} },
-            { id: 7, type: "user", sender: "広告審査待ち", img: IMG_USER, text: "承認すれば収益UP。拒否(コスト1)すれば健全性維持。", cost: 1, onResolve: { rev: -1.0 }, onTrash: { rev: 3.0, mental: -5 } }
-        ],
-        4: [
-            { id: 8, type: "staff", sender: "アオイ", img: IMG_AOI_BLUE, text: "私たち、本当に世界を良くしてますね！この調子で安全なSNSを作りましょう！", cost: 1, onResolve: { trust: 2, time: -1 }, onTrash: { trust: -2 } },
-        ],
-        
-        // --- 【黄の時代】 ---
-        5: [
-            { id: 9, type: "boss", sender: "CEO リチャード", img: IMG_CEO_YELLOW, text: "株主が成長鈍化を気にしている。目標収益を倍の20Mにする。エンゲージメントを上げろ。", cost: 0, onResolve: {}, onTrash: {} },
-            { id: 10, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "私のイラストが無断転載され誹謗中傷されています。アカウントを凍結してください！", cost: 2, onResolve: { mental: 5 }, onTrash: { divide: 5, mental: -5 } },
-        ],
-        6: [
-            { id: 11, type: "system", sender: "INFRA WARNING", img: IMG_SYS_WARN, text: "トラフィック急増により第3サーバーの冷却が追いつきません！対処しますか？", cost: 1, onResolve: { rev: -2.0 }, onTrash: { stock: -10 } },
-            { id: 12, type: "user", sender: "ユーザー", img: IMG_USER, text: "最近、タイムラインがトゲトゲしていて疲れます…", cost: 1, onResolve: { mental: 2 }, onTrash: { mental: -2 } }
-        ],
-        7: [
-            { id: 13, type: "user", sender: "トレンド監視AI", img: IMG_SYS_WARN, text: "特定アイドルのファン同士が殺害予告スレスレの派閥争いをしています。放置でトラフィックは稼げます。", cost: 2, onResolve: { divide: -5 }, onTrash: { divide: 5, rev: 2.0 } },
-        ],
-        8: [
-            { id: 14, type: "staff", sender: "アオイ", img: IMG_AOI_YELLOW, text: "先輩…最近、意図的に『怒り』を煽ってませんか？ トラフィックは凄いですが…", cost: 2, onResolve: { trust: 2, mental: 5, rev: -2.0 }, onTrash: { trust: -3, mental: -5 } },
-            { id: 15, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "インフルエンサーに目をつけられ、住所が晒されました。助けて！", cost: 2, onResolve: { mental: 10, rev: -3.0 }, onTrash: { mental: -15, divide: 10 } },
-        ],
-        9: [
-            { id: 16, type: "system", sender: "SECURITY", img: IMG_SYS_WARN, text: "特定政治家を賛美する大量のボット群を検知。エンゲージメントは稼いでいますが一斉削除しますか？", cost: 2, onResolve: { rev: -4.0 }, onTrash: { divide: 10 } }
-        ],
-        10: [
-            { id: 17, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "フェイク動画のせいで学校でいじめられています。消してください。", cost: 1, onResolve: { mental: 5 }, onTrash: { mental: -10 } }
-        ],
-        11: [
-            { id: 18, type: "boss", sender: "CEO リチャード", img: IMG_CEO_YELLOW, text: "論争が起きるほど滞在時間が伸びる！目標を35Mにする。安全フィルターなんか外せ！", cost: 1, onResolve: { rev: 5.0, divide: 10, trust: -2 }, onTrash: { stock: -20 } },
-            { id: 19, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "デマのせいで店に嫌がらせの電話が殺到しています。もう生きていけません。", cost: 2, onResolve: { mental: 10 }, onTrash: { mental: -20, divide: 5 } },
-        ],
+let state = {
+    month: 1,
+    cash: 1000000,
+    revenue: 0,
+    stock: 100,
+    divide: 10,
+    mental: 90,
+    time: 3,
+    cost: 80000, // 初期運営費
+    levels: { mod: 1, algo: 1, lobby: 0 },
+    aoiTrust: 50,
+    isGameOver: false
+};
 
-        // --- 【赤の時代】 ---
-        12: [
-            { id: 20, type: "boss", sender: "CEO リチャード", img: IMG_CEO_RED, text: "暴動のニュースを見たか？連中、ウチのアプリで連絡を取り合っている！トラフィック最高だ！", cost: 0, onResolve: {}, onTrash: {} },
-            { id: 21, type: "user", sender: "スパム報告x1500", img: IMG_USER_ALERT, text: "「ワクチンには毒が入っている！真実から目を覚ませ！！！」", cost: 3, onResolve: { divide: -10 }, onTrash: { divide: 15, rev: 5.0 } },
-        ],
-        13: [
-            { id: 22, type: "system", sender: "TREND ALERT", img: IMG_SYS_WARN, text: "『水道水に毒が入っている』というデマがトレンド1位。浄水施設への襲撃が呼びかけられています！", cost: 3, onResolve: { divide: -5 }, onTrash: { divide: 15 } }
-        ],
-        14: [
-            { id: 23, type: "boss", sender: "スポンサー企業", img: IMG_CEO_RED, text: "環境保護団体のハッシュタグを今すぐシャドウバンしろ。さもなくば数億円の契約を打ち切る。", cost: 1, onResolve: { stock: -15, trust: 2 }, onTrash: { rev: 5.0, divide: 10, trust: -3 } }
-        ],
-        15: [
-            { id: 24, type: "staff", sender: "アオイ", img: IMG_AOI_RED, text: "もう限界です。私たちが作ったのは、人を殺すためのコードだった…対応してください、お願いです！", cost: 3, onResolve: { trust: 5, mental: 10, rev: -5.0 }, onTrash: { trust: -10, mental: -20 } },
-            { id: 25, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "家の前に顔を隠した人たちが集まっています。だれかたすけ", cost: 2, onResolve: { mental: 5 }, onTrash: { mental: -20 } }
-        ],
-        16: [
-            { id: 26, type: "system", sender: "NEWS LINK", img: IMG_SYS_WARN, text: "当SNSで組織された暴徒が市庁舎に放火しました。ユーザーは燃える建物を背景に自撮りをアップしています。", cost: 2, onResolve: { stock: -10 }, onTrash: { divide: 15 } }
-        ],
-        17: [
-            { id: 27, type: "user", sender: "ユーザー", img: IMG_USER_ALERT, text: "みんな狂ってる…ここにはもう憎しみしかない…", cost: 1, onResolve: { mental: 5 }, onTrash: { mental: -15 } },
-            { id: 28, type: "system", sender: "SYSTEM ERROR", img: IMG_SYS_WARN, text: "01001011 01001001 01001100 01001100", cost: 3, onResolve: {}, onTrash: { divide: 10 } }
-        ],
-        18: [
-            { id: 29, type: "boss", sender: "CEO リチャード", img: IMG_CEO_RED, text: "君は最高のアーキテクトだ！このまま世界を燃やし尽くして利益を絞り取ろう！", cost: 0, onResolve: {}, onTrash: {} }
-        ]
-    };
+// --- SNSタイムライン：100パターン以上の動的テキスト ---
+const tweetTemplates = {
+    blue: [
+        "このアプリのおかげで疎遠だった母と連絡が取れた。感謝。",
+        "ハッシュタグ #癒やしタイム で流れてくる猫動画、最高すぎる。",
+        "Synapse Social、UIが綺麗で使いやすいね！",
+        "今日もお疲れ様。みんなに幸あれ。 #平和な世界",
+        "美味しいパン屋さん見つけた！シェアするね。",
+        "誰かが誰かを褒めてるタイムラインって、こんなに気持ちいいんだ。",
+        "運営さん、素敵な場所をありがとう。 #Synapse",
+        "誹謗中傷が全くないSNSなんて、夢みたいだ。"
+    ],
+    yellow: [
+        "最近、おすすめに流れてくるニュースが偏ってないか？",
+        "【悲報】〇〇さん、過去の発言で大炎上ｗｗｗ",
+        "私の投稿、なんで誰も反応してくれないの？ #孤独",
+        "運営の検閲基準が謎すぎる。言論弾圧かよ。",
+        "なんか最近、開くたびにイライラするなこのアプリ。",
+        "広告、広告、広告。金のことしか考えてないだろ。",
+        "あいつの意見、生理的に受け付けない。ブロック推奨。",
+        "嘘か本当かわからない情報が多すぎて疲れる。"
+    ],
+    red: [
+        "【緊急】〇〇駅前で暴動発生！武器を持って集まれ！",
+        "死ね。お前の住所は特定した。明日行くからな。",
+        "裏切り者に死の裁きを。 #聖戦 #浄化",
+        "この国はもう終わりだ。すべてを焼き尽くすべき。",
+        "隣人の正体は工作員だった。今すぐ排除せよ！！",
+        "運営は悪魔の加担者だ。CEOの首を撥ねろ！",
+        "真実を知りたくないか？このリンクを踏め（ウイルス注意）",
+        "殺し合いが始まったぞ！最高のエンターテインメントだ！"
+    ]
+};
+
+// --- 全18週：詳細シナリオ＆イベントデータ ---
+const weekScenarios = {
+    1: { 
+        speaker: "アオイ", img: IMG_AOI_BLUE, 
+        text: "先輩！ついにサービス開始ですね。まずはユーザーの『安心感』を勝ち取りましょう。",
+        effect: () => { state.revenue += 50000; } 
+    },
+    2: { 
+        speaker: "リチャード", img: IMG_SYSTEM, 
+        text: "フン、まだ小規模なSNSだな。今のうちに潰しておいた方が世のためだぞ？",
+        effect: () => { state.divide += 5; }
+    },
+    3: { 
+        speaker: "CEO", img: IMG_CEO_BLUE, 
+        text: "順調だが、ぬるい。もっと『熱狂』が欲しい。少しは争いを許容しろ。",
+        effect: () => { state.cost += 20000; }
+    },
+    4: { 
+        speaker: "アオイ", img: IMG_AOI_BLUE, 
+        text: "（青の時代・終盤）…少しずつ、言葉の鋭いユーザーが増えてきた気がします。嫌な予感がします。",
+        effect: () => { state.mental -= 5; }
+    },
+    5: { 
+        speaker: "SYSTEM", img: IMG_SYSTEM, 
+        text: "【警告】不適切なハッシュタグがトレンド入りしました。フェーズ：YELLOWへ移行。 ",
+        effect: () => { state.divide += 10; }
+    },
+    6: { 
+        speaker: "CEO", img: IMG_CEO_BLUE, 
+        text: "素晴らしい！収益が跳ね上がったぞ。これこそが人間の本性、情報の蜜だ。",
+        effect: () => { state.revenue *= 1.5; }
+    },
+    7: { 
+        speaker: "リチャード", img: IMG_SYSTEM, 
+        text: "あーあ、タイムラインが汚れ始めた。お前のせいだぞ、アーキテクト君。",
+        effect: () => { state.mental -= 10; }
+    },
+    8: { 
+        speaker: "アオイ", img: IMG_AOI_BLUE, 
+        text: "先輩、検閲が追いつきません。開発部に予算を回して、AIを強化しましょう…！",
+        effect: () => { state.cost += 50000; }
+    },
+    9: { 
+        speaker: "CEO", img: IMG_CEO_BLUE, 
+        text: "投資家たちが喜んでいる。さらにアルゴリズムを尖らせろ。対立こそが金になる。",
+        effect: () => { state.levels.algo += 1; }
+    },
+    10: { 
+        speaker: "SYSTEM", img: IMG_SYSTEM, 
+        text: "【重大】ユーザー間の分断が50%を超過。プラットフォームの空気が変質しています。",
+        effect: () => { state.divide += 5; }
+    },
+    11: { 
+        speaker: "アオイ", img: IMG_AOI_BLUE, 
+        text: "…今日、私の家の前に変な落書きがありました。私たちの仕事、間違ってませんか？",
+        effect: () => { state.aoiTrust -= 20; }
+    },
+    12: { 
+        speaker: "CEO", img: IMG_CEO_BLUE, 
+        text: "（赤の時代・突入）ついに来た。世界が我々の掌で燃えている。もっとだ、もっと煽れ！",
+        effect: () => { state.revenue *= 2.0; }
+    },
+    13: { 
+        speaker: "リチャード", img: IMG_SYSTEM, 
+        text: "おい、街で暴動が起きてるぞ。お前のSNSのせいだって、ニュースで言ってるが？",
+        effect: () => { state.divide += 15; }
+    },
+    14: { 
+        speaker: "アオイ", img: IMG_AOI_BLUE, 
+        text: "（目が虚ろ）もう、誰も信じられない。タイムラインに流れる言葉が全部、叫び声に聞こえる。",
+        effect: () => { state.mental -= 20; }
+    },
+    15: { 
+        speaker: "CEO", img: IMG_CEO_BLUE, 
+        text: "政府が介入を検討しているだと？ロビー活動に金を注ぎ込め。まだ終わらせないぞ。",
+        effect: () => { state.cost += 100000; }
+    },
+    16: { 
+        speaker: "SYSTEM", img: IMG_SYSTEM, 
+        text: "【非常事態】サーバー負荷が限界です。憎悪の拡散スピードが物理法則を超えています。",
+        effect: () => { state.divide += 20; }
+    },
+    17: { 
+        speaker: "アオイ", img: IMG_AOI_BLUE, 
+        text: "…先輩、さようなら。私はもう、この画面を見ることができません。",
+        effect: () => { state.aoiTrust = 0; }
+    },
+    18: { 
+        speaker: "CEO", img: IMG_CEO_BLUE, 
+        text: "（最終週）世界は再構築された。混沌こそが真理だ。我々は神になったのだよ。",
+        effect: () => { /* 最終判定へ */ }
+    }
+};
+
+// --- 投資と経営のロジック ---
+function applyInvestmentEffects() {
+    // 検閲Lvが高いほど、分断の上昇を抑える
+    let divideIncrease = (5 + (state.levels.algo * 3)) / (state.levels.mod * 1.5);
+    state.divide += divideIncrease;
+
+    // アルゴリズムLvが高いほど、収益は増えるがメンタルが削れる
+    state.revenue = (state.levels.algo * 100000) + Math.floor(Math.random() * 50000);
+    state.mental -= (2 + (state.levels.algo * 2));
+
+    // ロビー活動Lvが高いと、分断度を少し無理やり下げる（工作）
+    if(state.levels.lobby > 0) {
+        state.divide -= (state.levels.lobby * 2);
+    }
+
+    // パラメーターの閾値チェック
+    if(state.divide > 100) state.divide = 100;
+    if(state.divide < 0) state.divide = 0;
+    if(state.mental < 0) state.mental = 0;
+}
+
+// --- ゲームオーバー判定 ---
+function checkGameOver() {
+    // 1. 破産チェック
+    if(state.cash < 0) {
+        return { 
+            over: true, 
+            msg: "【破産】翌月の決済に失敗しました。CEOによりあなたは解任され、SNSは他社に売却されました。",
+            speaker: "CEO", img: IMG_CEO_BLUE 
+        };
+    }
+    // 2. 社会崩壊チェック
+    if(state.divide >= 100) {
+        return { 
+            over: true, 
+            msg: "【社会崩壊】分断が限界を突破。内戦が勃発し、インターネットインフラが消滅しました。人類の敗北です。",
+            speaker: "SYSTEM", img: IMG_SYSTEM 
+        };
+    }
+    return { over: false };
+}
+
+/* --- ここまで：既存のコードの該当箇所に貼り付けてください --- */
+ 
 
     // ==========================================
     // 動的テーマ（色）の変更
